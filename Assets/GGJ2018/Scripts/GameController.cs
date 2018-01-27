@@ -14,6 +14,7 @@ public class GameController : MonoBehaviour
 
 		private TimeSpan _duration;
 		private List<PlayerController> _players;
+		private int[] _ampCounts;
 
 		public void StartGame(int playerCount, float duration)
 		{
@@ -26,9 +27,13 @@ public class GameController : MonoBehaviour
 				go.name = "Player_" + (i + 1);
 				var controller = go.GetComponent<PlayerController>();
 				_players.Add(controller);
-				RegisterToPlayerEvents(controller);
+				controller.Initialize(i);
 				_cameraController.m_Targets[i] = go.transform;
+
+				RegisterToPlayerEvents(controller);
 			}
+
+			_ampCounts = new int[playerCount];
 		}
 
 		public void ClearGame()
@@ -36,9 +41,10 @@ public class GameController : MonoBehaviour
 			for(var i = 0; i < _players.Count; i++)
 			{
 				var player = _players[i];
-				UnregisterFromPlayerEvents(player);
 				Destroy(player.gameObject);
 				_cameraController.m_Targets[i] = null;
+				
+				UnregisterFromPlayerEvents(player);
 			}
 
 			_players.Clear();
@@ -56,11 +62,22 @@ public class GameController : MonoBehaviour
 
 		private void RegisterToPlayerEvents(PlayerController playerController)
 		{
-
+			playerController.AmpPlaced += OnAmpPlaced;
 		}
 
 		private void UnregisterFromPlayerEvents(PlayerController playerController)
 		{
+			playerController.AmpPlaced -= OnAmpPlaced;
+		}
+
+		private void OnAmpPlaced(AmpController amp)
+		{
+			_ampCounts[amp.OwnerId]++;
+		}
+
+		private void OnAmpDestroyed(AmpController amp)
+		{
+			_ampCounts[amp.OwnerId] = Mathf.Max(0, _ampCounts[amp.OwnerId]);
 
 		}
     }
