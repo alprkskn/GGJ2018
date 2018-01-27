@@ -16,6 +16,8 @@ namespace GGJ2018
 		private string _placeAmpButton;
 		private List<AmpController> _amps;
 		private Transform _transform;
+		private Vector3 _lastMovement;
+		private Vector3 _up;
 
 		private Vector3 _verticalAxis, _horizontalAxis;
 
@@ -28,6 +30,7 @@ namespace GGJ2018
             m_MovementAxisName = "Vertical" + m_PlayerNumber;
             m_TurnAxisName = "Horizontal" + m_PlayerNumber;
 			_placeAmpButton = "Action" + m_PlayerNumber;
+			_up = Vector3.up;
 
 			_verticalAxis = ProjectVectorOnPlane(Vector3.up, GameController.Instance.GameCamera.transform.forward).normalized;
 			_horizontalAxis = ProjectVectorOnPlane(Vector3.up, GameController.Instance.GameCamera.transform.right).normalized;
@@ -38,13 +41,23 @@ namespace GGJ2018
             // Create a vector in the direction the tank is facing with a magnitude based on the input, speed and the time between frames.
             Vector3 movement = (_verticalAxis * m_MovementInputValue + _horizontalAxis * m_TurnInputValue) * m_Speed * Time.deltaTime;
 
+			_lastMovement = movement;
+
             // Apply this movement to the rigidbody's position.
-            m_Rigidbody.MovePosition(m_Rigidbody.position + movement);
+			_transform.position = _transform.position + movement;
+            //m_Rigidbody.MovePosition(m_Rigidbody.position + movement);
 		}
 
         protected override void Turn ()
 		{
+			if(_lastMovement.magnitude > 0)
+			{
+                var lastMoveRotation = Quaternion.LookRotation(_lastMovement, _up);
 
+                var targetRotation = Quaternion.RotateTowards(_transform.rotation, lastMoveRotation, 10);
+
+				_transform.rotation = targetRotation;
+            }
 		}
 
         private Vector3 ProjectVectorOnPlane(Vector3 planeNormal, Vector3 v)
