@@ -91,7 +91,7 @@ namespace Complete
             for (int i = 0; i < m_Targets.Length; i++)
             {
                 // ... and if they aren't active continue on to the next target.
-                if (!m_Targets[i].gameObject.activeSelf)
+                if (m_Targets[i] != null && !m_Targets[i].gameObject.activeSelf)
                     continue;
 
                 // Otherwise, find the position of the target in the camera's local space.
