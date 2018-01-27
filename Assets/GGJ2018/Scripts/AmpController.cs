@@ -7,10 +7,18 @@ namespace GGJ2018
     public class AmpController : MonoBehaviour
     {
 		[SerializeField] GameObject _powerLinePrefab;
+		[SerializeField] Material[] _materials;
+		// TODO: switch colors.
+		[SerializeField] MeshRenderer[] _coloredRenderers;
 
 		private PlayerActions _owner;
 		private PowerLine _powerLine;
 		
+		public PowerLine PowLine
+		{
+			get { return _powerLine; }
+		}
+
 		public int OwnerId
 		{
 			get
@@ -33,6 +41,11 @@ namespace GGJ2018
 			pl.Initialize(_owner.transform, this.transform);
 
 			return pl;
+		}
+
+		void OnDestroy()
+		{
+			Destroy(_powerLine.gameObject);
 		}
     }
 }

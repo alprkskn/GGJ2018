@@ -15,9 +15,12 @@ namespace GGJ2018
 		private PlayerController _player;
 		private string _placeAmpButton;
 		private List<AmpController> _amps;
+		private Transform _transform;
+
 
         public void Initialize(PlayerController player)
         {
+			_transform = transform;
 			_player = player;
 			_amps = new List<AmpController>();
             // The axes names are based on player number.
@@ -33,7 +36,17 @@ namespace GGJ2018
 			{
 				Debug.LogFormat("Player {0} placed an Amp!", m_PlayerNumber);
 				PlaceAmp();
-			}			
+			}
+
+			if(Input.GetKeyDown(KeyCode.Space))
+			{
+				foreach(var a in _amps)
+				{
+					Destroy(a.gameObject);
+				}
+
+				_amps.Clear();
+			}
         }
 
 		void OnDestroy()
