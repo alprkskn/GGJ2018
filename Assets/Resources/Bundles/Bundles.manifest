@@ -1,0 +1,7 @@
+ManifestFileVersion: 0
+CRC: 783722745
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: uninputbundle
+      Dependencies: {}
