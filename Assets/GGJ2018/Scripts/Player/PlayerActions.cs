@@ -17,6 +17,7 @@ namespace GGJ2018
 		private List<AmpController> _amps;
 		private Transform _transform;
 
+		private Vector3 _verticalAxis, _horizontalAxis;
 
         public void Initialize(PlayerController player)
         {
@@ -27,7 +28,32 @@ namespace GGJ2018
             m_MovementAxisName = "Vertical" + m_PlayerNumber;
             m_TurnAxisName = "Horizontal" + m_PlayerNumber;
 			_placeAmpButton = "Action" + m_PlayerNumber;
+
+			_verticalAxis = ProjectVectorOnPlane(Vector3.up, GameController.Instance.GameCamera.transform.forward).normalized;
+			_horizontalAxis = ProjectVectorOnPlane(Vector3.up, GameController.Instance.GameCamera.transform.right).normalized;
         }
+
+		protected override void Move()
+		{
+            // Create a vector in the direction the tank is facing with a magnitude based on the input, speed and the time between frames.
+            Vector3 movement = (_verticalAxis * m_MovementInputValue + _horizontalAxis * m_TurnInputValue) * m_Speed * Time.deltaTime;
+
+            // Apply this movement to the rigidbody's position.
+            m_Rigidbody.MovePosition(m_Rigidbody.position + movement);
+		}
+
+        protected override void Turn ()
+		{
+
+		}
+
+        private Vector3 ProjectVectorOnPlane(Vector3 planeNormal, Vector3 v)
+        {
+            planeNormal.Normalize();
+            var distance = -Vector3.Dot(planeNormal.normalized, v);
+            return v + planeNormal * distance;
+        }
+
 
         protected override void Update()
         {

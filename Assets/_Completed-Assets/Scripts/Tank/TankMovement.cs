@@ -11,8 +11,8 @@ namespace Complete
         protected string m_MovementAxisName;          // The name of the input axis for moving forward and back.
         protected string m_TurnAxisName;              // The name of the input axis for turning.
         protected Rigidbody m_Rigidbody;              // Reference used to move the tank.
-        private float m_MovementInputValue;         // The current value of the movement input.
-        private float m_TurnInputValue;             // The current value of the turn input.
+        protected float m_MovementInputValue;         // The current value of the movement input.
+        protected float m_TurnInputValue;             // The current value of the turn input.
         private float m_OriginalPitch;              // The pitch of the audio source at the start of the scene.
         private ParticleSystem[] m_particleSystems; // References to all the particles systems used by the Tanks
 
@@ -77,8 +77,7 @@ namespace Complete
             Turn ();
         }
 
-
-        private void Move ()
+        protected virtual void Move ()
         {
             // Create a vector in the direction the tank is facing with a magnitude based on the input, speed and the time between frames.
             Vector3 movement = transform.forward * m_MovementInputValue * m_Speed * Time.deltaTime;
@@ -88,7 +87,7 @@ namespace Complete
         }
 
 
-        private void Turn ()
+        protected virtual void Turn ()
         {
             // Determine the number of degrees to be turned based on the input, speed and time between frames.
             float turn = m_TurnInputValue * m_TurnSpeed * Time.deltaTime;
