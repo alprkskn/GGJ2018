@@ -2,11 +2,15 @@
 using System.Collections.Generic;
 using UnityEngine;
 using GGJ2018.Utils;
+using System;
 
 namespace GGJ2018
 {
     public class PowerLine : MonoBehaviour
     {
+        public event Action<Vector3> LineConstrained;
+        public event Action<Vector3> LineReleased;
+
         public GameObject RopeSegmentPrefab;
         public GameObject CableSegmentPrefab;
 
@@ -14,19 +18,21 @@ namespace GGJ2018
         public float SegmentLength = 2f;
         public float MinimumIntervalToInstantiate = 0.3f;
 		public float RopeHeight = 1f;
+        public int MaxRopeSegment = 20;
 
 		private Transform _player, _amp;
 		private List<Rigidbody> _segments;
-		private const float MinSegmentLen = 3f;
         private Rigidbody _tip;
         private float LastInstantiationTime;
         private bool Calculate;
 		private Vector3 _startPosition;
         private List<Transform> _cableSegments;
+        private Rigidbody _playerRigidbody;
 
 		public void Initialize(Transform player, Transform amp)
 		{
 			_player = player;
+            _playerRigidbody = _player.GetComponent<Rigidbody>();
 			_amp = amp;
 			_segments = new List<Rigidbody>();
             _cableSegments = new List<Transform>();
@@ -42,10 +48,21 @@ namespace GGJ2018
                 var direction = diff.normalized;
                 _tip.AddForce(direction * TipRepulsionFactor, ForceMode.Acceleration);
 
-                if (LastInstantiationTime + MinimumIntervalToInstantiate < Time.time && distance > SegmentLength)
+                if (_segments.Count < MaxRopeSegment && LastInstantiationTime + MinimumIntervalToInstantiate < Time.time && distance > SegmentLength)
                 {
                     _tip = InstantiateRopeSegment(_tip);
                     _segments.Add(_tip);
+                }
+                else if(_segments.Count >= MaxRopeSegment)
+                {
+                    if(Vector3.Distance(_startPosition, _player.position) > SegmentLength * _segments.Count)
+                    {
+                        if(LineConstrained != null) LineConstrained(_tip.position);
+                    }
+                    else
+                    {
+                        if(LineConstrained != null) LineReleased(_tip.position);
+                    }
                 }
 
                 var nodes = new List<Vector3>(_segments.Count);
@@ -54,7 +71,7 @@ namespace GGJ2018
                     nodes.Add(seg.position);
                 }
 
-                var simplified = LineSimplifier.SimplifyLine(nodes, 1);
+                var simplified = nodes;//LineSimplifier.SimplifyLine(nodes, 10);
 
                 var cursor = 0;
                 var s = GetOrInstantiateCableSegment(cursor++);
@@ -127,7 +144,7 @@ namespace GGJ2018
             }
             else
             {
-                position = previousRigidbody.transform.position + previousRigidbody.transform.forward * 2f;
+                position = previousRigidbody.transform.position + previousRigidbody.transform.forward * SegmentLength;
                 rotation = Quaternion.Euler(0f, previousRigidbody.transform.eulerAngles.y, 0f); ;
             }
             var go = Instantiate(RopeSegmentPrefab, position, rotation);

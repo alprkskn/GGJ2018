@@ -20,6 +20,7 @@ namespace GGJ2018
 		private Transform _transform;
 		private Vector3 _lastMovement;
 		private Vector3 _up;
+		private bool _locked;
 
 		private string _networkVerticalAxis, _networkHorizontalAxis;
 
@@ -46,6 +47,7 @@ namespace GGJ2018
 
 		protected override void Move()
 		{
+			if(_locked) return;
             // Create a vector in the direction the tank is facing with a magnitude based on the input, speed and the time between frames.
             Vector3 movement = (_verticalAxis * m_MovementInputValue + _horizontalAxis * m_TurnInputValue) * m_Speed * Time.deltaTime;
 
@@ -94,6 +96,8 @@ namespace GGJ2018
 				foreach(var a in _amps)
 				{
 					if(AmpDestroyed != null) AmpDestroyed(a);
+					a.PowLine.LineConstrained += OnPowerLineConstrained;
+					a.PowLine.LineReleased += OnPowerLineReleased;
 
 					Destroy(a.gameObject);
 				}
@@ -107,6 +111,8 @@ namespace GGJ2018
 			foreach(var amp in _amps)
 			{
 				if(AmpDestroyed != null) AmpDestroyed(amp);
+				amp.PowLine.LineConstrained += OnPowerLineConstrained;
+				amp.PowLine.LineReleased += OnPowerLineReleased;
 				Destroy(amp);
 			}
 			_amps.Clear();
@@ -122,9 +128,40 @@ namespace GGJ2018
 			go.transform.rotation = transform.rotation;
 
 			controller.SetOwner(this);
+			controller.PowLine.LineConstrained += OnPowerLineConstrained;
+			controller.PowLine.LineReleased += OnPowerLineReleased;
 			//
 			
 			if(AmpPlaced != null) AmpPlaced(controller);
+		}
+
+		private void OnPowerLineConstrained(Vector3 tip)
+		{
+			if (!_locked)
+            {
+                _locked = true;
+                Debug.Log("LOCKED");
+                var delta = tip - _transform.position;
+                m_Rigidbody.velocity = Vector3.zero;
+                m_Rigidbody.AddForce(delta.normalized * 5f + Vector3.up * 3f, ForceMode.Impulse);
+            }
+		}
+
+		private Coroutine _delayCoroutine;
+		private void OnPowerLineReleased(Vector3 tip)
+		{
+			if(_locked && _delayCoroutine == null)
+			{
+				_delayCoroutine = StartCoroutine(DelayLock(1f));
+			}
+		}
+
+		private IEnumerator DelayLock(float duration)
+		{
+			yield return new WaitForSeconds(duration);
+			Debug.Log("UNLOCKED");
+			_locked = false;
+			_delayCoroutine = null;
 		}
     }
 }
