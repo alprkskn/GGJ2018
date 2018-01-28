@@ -9,17 +9,16 @@ namespace GGJ2018
         public GameObject RopeSegmentPrefab;
         public float TipRepulsionFactor = 1f;
         public float SegmentLength = 2f;
+        public float MinimumIntervalToInstantiate = 0.3f;
+		public float RopeHeight = 1f;
 
 		private Transform _player, _amp;
-
 		private List<Rigidbody> _nodes;
 		private const float MinSegmentLen = 3f;
-
         private Rigidbody _tip;
         private float LastInstantiationTime;
-        public float MinimumIntervalToInstantiate = 0.3f;
         private bool Calculate;
-		public float RopeHeight = 1f;
+		private Vector3 _startPosition;
 
 		public void Initialize(Transform player, Transform amp)
 		{
@@ -27,8 +26,7 @@ namespace GGJ2018
 			_amp = amp;
 			_nodes = new List<Rigidbody>();
 
-			_tip = InstantiateRopeSegment(null);
-			_nodes.Add(_tip);
+			StartCoroutine(RopeDelay(MinimumIntervalToInstantiate));
 		}
 
 		void LateUpdate()
@@ -48,6 +46,15 @@ namespace GGJ2018
             }
         }
 
+		private IEnumerator RopeDelay(float duration)
+		{
+			_startPosition = _player.position;
+			yield return new WaitForSeconds(duration);
+
+			_tip = InstantiateRopeSegment(null);
+			_nodes.Add(_tip);
+		}
+
         private Rigidbody InstantiateRopeSegment(Rigidbody previousRigidbody)
         {
             LastInstantiationTime = Time.time;
@@ -55,7 +62,7 @@ namespace GGJ2018
             Quaternion rotation;
             if (!previousRigidbody)
             {
-                position = _player.position + Vector3.up * RopeHeight;
+                position = _startPosition + Vector3.up * RopeHeight;
                 rotation = Quaternion.Euler(0f, _player.eulerAngles.y, 0f);
             }
             else
