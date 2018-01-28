@@ -12,6 +12,15 @@ namespace GGJ2018
 		[SerializeField] MeshRenderer[] _coloredRenderers;
 
 		private PlayerActions _owner;
+
+		public PlayerActions Owner
+		{
+			get
+			{
+				return _owner;
+			}
+		}
+
 		private PowerLine _powerLine;
 		
 		public PowerLine PowLine

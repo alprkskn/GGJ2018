@@ -11,11 +11,18 @@ namespace GGJ2018
     {
 		public event Action<AmpController> AmpPlaced;
 		public event Action<AmpController> AmpDestroyed;
+		public float MaxCutSqrDistance = 0.5f * 0.5f;
 
 		[SerializeField] private GameObject _ampPrefab;
 
 		private PlayerController _player;
-		private string _placeAmpButton;
+
+        public PlayerController PlayerController
+        {
+            get { return _player; }
+        }
+
+		private string _placeAmpButton , _cutButton;
 		private List<AmpController> _amps;
 		private Transform _transform;
 		private Vector3 _lastMovement;
@@ -39,6 +46,7 @@ namespace GGJ2018
 			_networkVerticalAxis = "Vertical";
 
 			_placeAmpButton = "Action" + m_PlayerNumber;
+			_cutButton = "Fire" + m_PlayerNumber;
 			_up = Vector3.up;
 
 			_verticalAxis = ProjectVectorOnPlane(Vector3.up, GameController.Instance.GameCamera.transform.forward).normalized;
@@ -77,6 +85,17 @@ namespace GGJ2018
             return v + planeNormal * distance;
         }
 
+		private void DestroyAmp(AmpController amp)
+        {
+			if(amp.OwnerId != this.m_PlayerNumber) return;
+
+            if (AmpDestroyed != null) AmpDestroyed(amp);
+            amp.PowLine.LineConstrained -= OnPowerLineConstrained;
+            amp.PowLine.LineReleased -= OnPowerLineReleased;
+
+			_amps.Remove(amp);
+            Destroy(amp.gameObject);
+        }
 
         protected override void Update()
         {
@@ -91,18 +110,37 @@ namespace GGJ2018
 				PlaceAmp();
 			}
 
-			if(Input.GetKeyDown(KeyCode.Space) || UNInput.GetButtonDown(m_PlayerNumber, "Back"))
+			if(Input.GetKeyDown(KeyCode.Backspace) || UNInput.GetButtonDown(m_PlayerNumber, "Start"))
 			{
-				foreach(var a in _amps)
+				for(int i = _amps.Count - 1; i >= 0; i--)
 				{
-					if(AmpDestroyed != null) AmpDestroyed(a);
-					a.PowLine.LineConstrained += OnPowerLineConstrained;
-					a.PowLine.LineReleased += OnPowerLineReleased;
-
-					Destroy(a.gameObject);
+					var a = _amps[i];
+					DestroyAmp(a);
 				}
 
 				_amps.Clear();
+			}
+
+			var enemyAmps = GameController.Instance.EnemyAmps(_player);
+
+			AmpController target = null;
+			var minDist = float.MaxValue;
+			foreach(var a in enemyAmps)
+			{
+				Vector3 point;
+				var dist = a.PowLine.SqrDistanceFromPoint(_transform.position, out point);
+
+				if(dist < MaxCutSqrDistance && dist < minDist)
+				{
+					minDist = dist;
+					Debug.DrawLine(point, point + Vector3.up * 100f, Color.yellow);
+					target = a;
+				}
+			}
+
+			if(target != null && Input.GetButton(_cutButton) || UNInput.GetButton(m_PlayerNumber, "Back"))
+			{
+				target.Owner.DestroyAmp(target);
 			}
         }
 
@@ -140,7 +178,6 @@ namespace GGJ2018
 			if (!_locked)
             {
                 _locked = true;
-                Debug.Log("LOCKED");
                 var delta = tip - _transform.position;
                 m_Rigidbody.velocity = Vector3.zero;
                 m_Rigidbody.AddForce(delta.normalized * 5f + Vector3.up * 3f, ForceMode.Impulse);
@@ -159,7 +196,6 @@ namespace GGJ2018
 		private IEnumerator DelayLock(float duration)
 		{
 			yield return new WaitForSeconds(duration);
-			Debug.Log("UNLOCKED");
 			_locked = false;
 			_delayCoroutine = null;
 		}

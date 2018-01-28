@@ -33,6 +33,7 @@ namespace GGJ2018
 
         private TimeSpan _duration;
         private List<PlayerController> _players;
+		private Dictionary<int, List<AmpController>> _ampDictionary;
         private int[] _ampCounts;
 		private Camera _mainCamera;
 
@@ -76,6 +77,8 @@ namespace GGJ2018
         {
             _cameraController.m_Targets = new Transform[playerCount];
             _players = new List<PlayerController>(playerCount);
+			_ampDictionary = new Dictionary<int, List<AmpController>>();
+
             for (int i = 0; i < _spawnPoints.Length && i < playerCount; i++)
             {
                 var go = Instantiate(_playerPrefab);
@@ -111,6 +114,23 @@ namespace GGJ2018
             _players.Clear();
         }
 
+		public List<AmpController> EnemyAmps(PlayerController playerController)
+		{
+			var result = new List<AmpController>();
+
+			foreach(var pair in _ampDictionary)
+			{
+				if(pair.Key == playerController.ID) continue;
+
+				foreach(var amp in pair.Value)
+				{
+					result.Add(amp);
+				}
+			}
+
+			return result;
+		}
+
         void Start()
         {
             StartCoroutine(InitiateStartSequence(3, 2, 120));
@@ -141,6 +161,13 @@ namespace GGJ2018
         {
             _ampCounts[amp.OwnerId]++;
 
+			if(!_ampDictionary.ContainsKey(amp.OwnerId))
+			{
+				_ampDictionary.Add(amp.OwnerId, new List<AmpController>());
+			}
+
+			_ampDictionary[amp.OwnerId].Add(amp);
+
 			_scoreP1.text = _ampCounts[0].ToString();
 			_scoreP2.text = _ampCounts[1].ToString();
         }
@@ -149,6 +176,11 @@ namespace GGJ2018
         {
             _ampCounts[amp.OwnerId]--;
 			
+			if(_ampDictionary.ContainsKey(amp.OwnerId))
+			{
+				_ampDictionary[amp.OwnerId].Remove(amp);
+			}
+
             _ampCounts[amp.OwnerId] = (_ampCounts[amp.OwnerId] < 0) ? 0 : _ampCounts[amp.OwnerId];
 			_scoreP1.text = _ampCounts[0].ToString();
 			_scoreP2.text = _ampCounts[1].ToString();

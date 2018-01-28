@@ -22,6 +22,8 @@ namespace GGJ2018
 
 		private Transform _player, _amp;
 		private List<Rigidbody> _segments;
+        private List<Vector3> _nodes;
+
         private Rigidbody _tip;
         private float LastInstantiationTime;
         private bool Calculate;
@@ -55,7 +57,8 @@ namespace GGJ2018
                 }
                 else if(_segments.Count >= MaxRopeSegment)
                 {
-                    if(Vector3.Distance(_startPosition, _player.position) > SegmentLength * _segments.Count)
+                    var len = Vector3.Distance(_startPosition, _player.position);
+                    if(len > SegmentLength * _segments.Count)
                     {
                         if(LineConstrained != null) LineConstrained(_tip.position);
                     }
@@ -65,13 +68,13 @@ namespace GGJ2018
                     }
                 }
 
-                var nodes = new List<Vector3>(_segments.Count);
+                _nodes = new List<Vector3>(_segments.Count);
                 foreach(var seg in _segments)
                 {
-                    nodes.Add(seg.position);
+                    _nodes.Add(seg.position);
                 }
 
-                var simplified = nodes;//LineSimplifier.SimplifyLine(nodes, 10);
+                var simplified = _nodes;
 
                 var cursor = 0;
                 var s = GetOrInstantiateCableSegment(cursor++);
@@ -176,5 +179,28 @@ namespace GGJ2018
 
             _segments.Clear();
 		}
+
+        public float SqrDistanceFromPoint(Vector3 pt, out Vector3 closestPoint)
+        {
+            closestPoint = Vector3.zero;
+            if(_nodes == null)
+            {
+                return float.PositiveInfinity;
+            }
+
+            float minDistance = float.PositiveInfinity;
+
+            for(int i = 0; i < _nodes.Count - 1; i++)
+            {
+                var dist = PathUtils.SquareDistanceToLineSegment2D(pt, _nodes[i], _nodes[i+1]);
+                if(dist < minDistance)
+                {
+                    minDistance = dist;
+                    PathUtils.GetProjectPointOnLine(pt, _nodes[i], _nodes[i+1], out closestPoint);
+                }
+            }
+
+            return minDistance;
+        }
     }
 }
