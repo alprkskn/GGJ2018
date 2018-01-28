@@ -41,7 +41,7 @@ namespace GGJ2018
 			StartCoroutine(RopeDelay(MinimumIntervalToInstantiate));
 		}
 
-		void LateUpdate()
+		void FixedUpdate()
         {
 			if(_tip != null)
             {

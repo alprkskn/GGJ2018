@@ -142,8 +142,17 @@ namespace GGJ2018
 			var minutes = _duration.Minutes;
 			var seconds = _duration.Seconds;
 
+			if(_duration.TotalSeconds < 0)
+			{
+				FinishGame();
+			}
+
 			_timeLeft.text = _duration.Minutes + ":" + ((seconds < 10) ? "0" : "") + _duration.Seconds;
         }
+
+		private void FinishGame()
+		{
+		}
 
         private void RegisterToPlayerEvents(PlayerController playerController)
         {
