@@ -3,12 +3,14 @@ using System.Collections;
 using System.Collections.Generic;
 using Complete;
 using UnityEngine;
+using UniversalNetworkInput;
 
 namespace GGJ2018
 {
     public class PlayerActions : TankMovement
     {
 		public event Action<AmpController> AmpPlaced;
+		public event Action<AmpController> AmpDestroyed;
 
 		[SerializeField] private GameObject _ampPrefab;
 
@@ -18,6 +20,8 @@ namespace GGJ2018
 		private Transform _transform;
 		private Vector3 _lastMovement;
 		private Vector3 _up;
+
+		private string _networkVerticalAxis, _networkHorizontalAxis;
 
 		private Vector3 _verticalAxis, _horizontalAxis;
 
@@ -29,6 +33,10 @@ namespace GGJ2018
             // The axes names are based on player number.
             m_MovementAxisName = "Vertical" + m_PlayerNumber;
             m_TurnAxisName = "Horizontal" + m_PlayerNumber;
+
+			_networkHorizontalAxis = "Horizontal";
+			_networkVerticalAxis = "Vertical";
+
 			_placeAmpButton = "Action" + m_PlayerNumber;
 			_up = Vector3.up;
 
@@ -71,16 +79,22 @@ namespace GGJ2018
         protected override void Update()
         {
 			base.Update();
-			if(Input.GetButtonDown(_placeAmpButton))
+
+            m_MovementInputValue = (m_MovementInputValue == 0) ? UNInput.GetAxis(m_PlayerNumber, _networkVerticalAxis) : m_MovementInputValue;
+            m_TurnInputValue = (m_TurnInputValue == 0) ? UNInput.GetAxis(m_PlayerNumber, _networkHorizontalAxis) : m_TurnInputValue;
+			
+			if(Input.GetButtonDown(_placeAmpButton) || UNInput.GetButtonDown(m_PlayerNumber, "Action"))
 			{
 				Debug.LogFormat("Player {0} placed an Amp!", m_PlayerNumber);
 				PlaceAmp();
 			}
 
-			if(Input.GetKeyDown(KeyCode.Space))
+			if(Input.GetKeyDown(KeyCode.Space) || UNInput.GetButtonDown(m_PlayerNumber, "Back"))
 			{
 				foreach(var a in _amps)
 				{
+					if(AmpDestroyed != null) AmpDestroyed(a);
+
 					Destroy(a.gameObject);
 				}
 
@@ -92,6 +106,7 @@ namespace GGJ2018
 		{
 			foreach(var amp in _amps)
 			{
+				if(AmpDestroyed != null) AmpDestroyed(amp);
 				Destroy(amp);
 			}
 			_amps.Clear();

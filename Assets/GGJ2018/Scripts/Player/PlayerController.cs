@@ -21,6 +21,18 @@ namespace GGJ2018
 			}
 		}
 
+		public event Action<AmpController> AmpDestroyed
+		{
+			add
+			{
+				_actions.AmpDestroyed += value;
+			}
+			remove
+			{
+				_actions.AmpDestroyed -= value;
+			}
+		}
+
         public void Initialize(int id)
         {
 			_actions = GetComponent<PlayerActions>();

@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using Complete;
 using UnityEngine;
 using UnityEngine.UI;
+using UniversalNetworkInput.Network;
+using UniversalNetworkInput.Network.Internal;
 
 namespace GGJ2018
 {
@@ -27,7 +29,7 @@ namespace GGJ2018
         [SerializeField] private GameObject _playerPrefab;
         [SerializeField] private CameraControl _cameraController;
 		[SerializeField] private Text _mainMessage;
-		[SerializeField] private Text _scoreP1, _scoreP2, _timeLeft;
+		[SerializeField] private Text _scoreP1, _scoreP2, _timeLeft, _serverIP;
 
         private TimeSpan _duration;
         private List<PlayerController> _players;
@@ -49,7 +51,10 @@ namespace GGJ2018
 
 		public IEnumerator InitiateStartSequence(int countdown, int playerCount, float duration)
 		{
+			UNServer.Start(4, 25565, UNNetwork.GetLocalIPAddress());
 			_mainMessage.gameObject.SetActive(true);
+			_serverIP.text = UNServer.ip_address;
+			
 
 			_scoreP1.gameObject.SetActive(false);
 			_scoreP2.gameObject.SetActive(false);
@@ -123,11 +128,13 @@ namespace GGJ2018
         private void RegisterToPlayerEvents(PlayerController playerController)
         {
             playerController.AmpPlaced += OnAmpPlaced;
+            playerController.AmpDestroyed += OnAmpDestroyed;
         }
 
         private void UnregisterFromPlayerEvents(PlayerController playerController)
         {
             playerController.AmpPlaced -= OnAmpPlaced;
+            playerController.AmpDestroyed -= OnAmpDestroyed;
         }
 
         private void OnAmpPlaced(AmpController amp)
@@ -140,8 +147,9 @@ namespace GGJ2018
 
         private void OnAmpDestroyed(AmpController amp)
         {
-            _ampCounts[amp.OwnerId] = Mathf.Max(0, _ampCounts[amp.OwnerId]);
-
+            _ampCounts[amp.OwnerId]--;
+			
+            _ampCounts[amp.OwnerId] = (_ampCounts[amp.OwnerId] < 0) ? 0 : _ampCounts[amp.OwnerId];
 			_scoreP1.text = _ampCounts[0].ToString();
 			_scoreP2.text = _ampCounts[1].ToString();
         }
